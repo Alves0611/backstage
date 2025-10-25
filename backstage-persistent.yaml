@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backstage-persistent
+  labels:
+    app: backstage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backstage
+  template:
+    metadata:
+      labels:
+        app: backstage
+    spec:
+      containers:
+        - name: backstage
+          image: backstage/backstage:latest
+          ports:
+            - containerPort: 7007
+          env:
+            - name: NODE_ENV
+              value: "production"
+          volumeMounts:
+            - name: backstage-data
+              mountPath: /app/data
+            - name: backstage-config
+              mountPath: /app/app-config.yaml
+              subPath: app-config.yaml
+      volumes:
+        - name: backstage-data
+          persistentVolumeClaim:
+            claimName: backstage-data
+        - name: backstage-config
+          configMap:
+            name: backstage-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backstage-persistent
+spec:
+  selector:
+    app: backstage
+  ports:
+    - port: 7007
+      targetPort: 7007
+  type: ClusterIP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backstage-config
+data:
+  app-config.yaml: |
+    app:
+      title: Backstage
+      baseUrl: http://localhost:3000
+    backend:
+      baseUrl: http://localhost:7007
+      listen:
+        port: 7007
+      database:
+        client: better-sqlite3
+        connection: '/app/data/backstage.db'
+      cors:
+        origin: http://localhost:3000
+        methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+        credentials: true
+    auth:
+      providers:
+        guest:
+          dangerouslyAllowOutsideDevelopment: true
+    catalog:
+      locations:
+        - type: file
+          target: /app/data/entities.yaml
