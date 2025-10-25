@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backstage-config
+data:
+  app-config.yaml: |
+    app:
+      title: Backstage
+      baseUrl: http://localhost:3000
+    backend:
+      baseUrl: http://localhost:7007
+      listen:
+        port: 7007
+      database:
+        client: better-sqlite3
+        connection: '/app/data/backstage.db'
+      cors:
+        origin: http://localhost:3000
+        methods: [GET, HEAD, PATCH, POST, PUT, DELETE]
+        credentials: true
+      reading:
+        allow:
+          - host: localhost
+          - host: 127.0.0.1
+    auth:
+      providers:
+        guest:
+          dangerouslyAllowOutsideDevelopment: true
+    catalog:
+      locations:
+        - type: file
+          target: /app/data/entities.yaml
